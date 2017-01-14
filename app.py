@@ -2,6 +2,11 @@
 # -*- coding: utf-8 -*-
 import requests, sys, time, os, json, shutil
 
+# set working directory - chang
+abspath = os.path.abspath(__file__)
+dname = os.path.dirname(abspath)
+os.chdir(dname)
+
 # Get video ID
 if len(sys.argv) >= 2:
     videoId = 'v' + sys.argv[1].replace('v', '')
@@ -9,9 +14,9 @@ else:
     videoId = 'v' + raw_input('Video ID: ').replace('v', '')
 
 # Program requires at least example.setting.json or settings.json to run properly
-if not os.path.isfile('example.settings.json') and not os.path.isfile('settings.json'):
-    print 'Error: Missing settings file.'
-    sys.exit(1)
+# if not os.path.isfile('example.settings.json') and not os.path.isfile('settings.json'):
+    # print 'Error: Missing settings file.'
+    # sys.exit(1)
 
 # Copy settings example file if settings.json doesn't exist
 if not os.path.isfile('settings.json'):
@@ -25,14 +30,14 @@ with open('settings.json', 'r') as settings_file:
 if len(sys.argv) >= 3:
     if not sys.argv[2] == settings['client_id']:
         settings['client_id'] = sys.argv[2]
-        answer = raw_input('Save client ID? (Y/n): ')
+        answer = input('Save client ID? (Y/n): ')
         if (not answer.lower() == "n"):
             with open('settings.json', 'w') as settings_file:
                 json.dump(settings, settings_file)
 
 # Check if client_id is required
 if settings['require_client_id'] and not settings['client_id']:
-    print "Twitch requires a client ID to use their API.\nRegister an application on https://www.twitch.tv/settings/connections to get yours."
+    print('Twitch requires a client ID to use their API.\nRegister an application on https://www.twitch.tv/settings/connections to get yours.')
     settings['client_id'] = raw_input('Client ID: ')
     answer = raw_input('Save client ID? (Y/n): ')
     if (not answer.lower() == "n"):
@@ -76,9 +81,9 @@ detail = response['errors'][0]['detail'].split(' ') # We split the detail string
 # If the length is 7, it's (most likely) valid
 if len(detail) != 7:
     if settings['require_client_id']:
-        print 'Error: Invalid video or client ID'
+        print('Error: Invalid video or client ID')
     else:
-        print 'Error: Invalid video ID'
+        print('Error: Invalid video ID')
     sys.exit(1)
 
 start = int(detail[4])                              # The start timestamp is on index 4
@@ -102,7 +107,7 @@ if not os.path.exists(directory):
     os.makedirs(directory)
 
 # Filename
-file = open(directory + '/' + videoId + '.txt', 'w')
+file = open(directory + '/' + videoId + '.txt', 'w', encoding='UTF-8')
 
 
 # Download messages from timestamps between start and stop.
@@ -123,12 +128,15 @@ while timestamp <= stop:
 
             # If this is a new message, save the unique ID to prevent duplication later.
             messageIds.append(message['id'])
-
+            
             # Message data
+            chat_encoding = 'UTF-8'
+            # date    = str(time.strftime('%m/%d/%Y %H:%M:%S',  time.gmtime(message['attributes']['timestamp']/1000.)))
+            # sender  = str(message['attributes']['from'].encode('utf-8'))
+            # text    = str(message['attributes']['message'].encode('utf-8'))
             date    = time.strftime('%m/%d/%Y %H:%M:%S',  time.gmtime(message['attributes']['timestamp']/1000.))
-            sender  = message['attributes']['from'].encode('utf-8')
-            text    = message['attributes']['message'].encode('utf-8')
-
+            sender  = message['attributes']['from']
+            text    = message['attributes']['message']
             # Append message to output file
             file.write(date + ' ' + sender + ': ' + text + '\n')
 
@@ -136,7 +144,7 @@ while timestamp <= stop:
             if settings['print']:
 
                 # Print messages
-                print '\033[94m' + date + ' \033[92m'+ sender + '\033[0m' + ': ' + text
+                print('\033[94m' + date + ' \033[92m'+ sender + '\033[0m' + ': ' + text)
             else:
 
                 #Show progress %
